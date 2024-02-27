@@ -1,0 +1,48 @@
+name: Endor Labs Scan
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+    scan:
+      permissions:
+        security-events: write
+        contents: read
+        id-token: write
+      runs-on: ubuntu-latest
+      
+      steps:
+        
+        - name: Checkout Repository
+          uses: actions/checkout@v3
+
+        - name: Setup Node
+          uses: actions/setup-node@v3
+          with:
+            node-version: 18
+            cache: 'npm'
+            cache-dependency-path: package-lock.json
+          
+        - name: npm install
+          run: npm install
+
+        - name: Run endorctl
+          uses: endorlabs/github-action@v1.1.2
+          with:
+            namespace: "your-namespace"
+            api: "https://api.endorlabs.com"
+            enable_github_action_token: "true"
+            pr: false
+            #enable_pr_comments: true
+            github_token: ${{ secrets.GITHUB_TOKEN }}
+            additional_args: --disable-phantom=false
+#            tags: "actor=${{ github.actor }},run-id=${{ github.run_id }}"
+#            sarif_file: endor-labs.sarif
+
+#        - name: Upload SARIF to github
+#          uses: github/codeql-action/upload-sarif@v3
+#          with:
+#            sarif_file: endor-labs.sarif
