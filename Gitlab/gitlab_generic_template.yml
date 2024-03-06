@@ -28,19 +28,6 @@ Endor Labs Dependency Scan:
         VERSION=$(curl https://api.endorlabs.com/meta/version | jq -r '.Service.Version');
         curl https://storage.googleapis.com/endorlabs/"$VERSION"/binaries/endorctl_"$VERSION"_linux_amd64 -o endorctl;
         echo "$ENDORCTL_SHA  endorctl" | sha256sum -c;
-        if [ $? -ne 0 ]; then 
-          echo "Integrity check failed"; 
-          exit 1;
-        fi
-      else
-        echo Downloading version "$ENDORCTL_VERSION" of endorctl;
-        curl https://storage.googleapis.com/endorlabs/"$ENDORCTL_VERSION"/binaries/endorctl_"$ENDORCTL_VERSION"_linux_amd64 -o endorctl;
-        echo "$ENDORCTL_SHA  endorctl" | sha256sum -c;
-        if [ $? -ne 0 ]; then 
-          echo "Integrity check failed for the pinned version of endorctl. Please ensure the environment variable is set and re-run the job"; 
-          exit 1;
-        fi
-      fi
     - chmod +x ./endorctl
 
 # Scan with Endor Labs:
