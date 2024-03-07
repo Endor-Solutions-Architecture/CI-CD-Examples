@@ -9,7 +9,7 @@ stages:
   - build
   - endorScan
 
- # Build steps for your application
+# Build steps for your application
 build_job:
   stage: build
   script:
