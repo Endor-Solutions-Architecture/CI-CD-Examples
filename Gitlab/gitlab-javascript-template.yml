@@ -3,24 +3,23 @@ variables:
     ENDOR_API_CREDENTIALS_KEY: $ENDOR_API_KEY
     ENDOR_API_CREDENTIALS_SECRET: $ENDOR_API_SECRET
 
-image: maven:3.8-openjdk-11
+image: node:latest
 
 stages:
   - build
   - endorScan
 
+ # Build steps for your application
 build_job:
   stage: build
   script:
-    - mvn clean install 
+    - npm install
 
 endorScan:
   stage: endorScan
-  
+
   before_script:
     # Download and scan with endorctl
-    - curl -fsSL https://deb.nodesource.com/setup_current.x | bash
-    - apt-get install -y nodejs
     - npm install -g endorctl
   
   script:

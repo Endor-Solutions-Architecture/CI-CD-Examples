@@ -1,0 +1,25 @@
+trigger:
+- main
+
+pool:
+  vmImage: ubuntu-latest
+
+steps:
+- task: Maven@3
+  inputs:
+    mavenPomFile: 'pom.xml'
+    javaHomeOption: 'JDKVersion'
+    jdkVersionOption: '1.17'
+    jdkArchitectureOption: 'x64'
+
+- script: |
+    curl https://api.endorlabs.com/download/latest/endorctl_linux_amd64
+  displayName: 'Download the Endor Labs CLI'
+    
+- script: |
+    chmod +x ./endorctl
+  displayName: 'Modify the permissions of the binary to ensure it is executable'
+    
+- script: |
+    ./endorctl scan --api-key $(ENDOR_API_KEY) --api-secret $(ENDOR_API_SECRET) -n your namespace
+  displayName: 'Run a scan against the repository using your API key & secret pair'

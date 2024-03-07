@@ -3,20 +3,21 @@ variables:
     ENDOR_API_CREDENTIALS_KEY: $ENDOR_API_KEY
     ENDOR_API_CREDENTIALS_SECRET: $ENDOR_API_SECRET
 
-image: maven:3.8-openjdk-11
+image: mcr.microsoft.com/dotnet/sdk:latest
 
 stages:
   - build
   - endorScan
 
-build_job:
+build:
   stage: build
   script:
-    - mvn clean install 
+    - 'dotnet restore --packages $NUGET_PACKAGES_DIRECTORY --use-lock-file'  
+    - 'dotnet build --no-restore'
 
 endorScan:
   stage: endorScan
-  
+
   before_script:
     # Download and scan with endorctl
     - curl -fsSL https://deb.nodesource.com/setup_current.x | bash

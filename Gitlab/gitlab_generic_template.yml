@@ -1,46 +1,25 @@
+variables:
+    ENDOR_NAMESPACE: "your-namespace" # Insert your Endor Labs namespace here
+    ENDOR_API_CREDENTIALS_KEY: $ENDOR_API_KEY
+    ENDOR_API_CREDENTIALS_SECRET: $ENDOR_API_SECRET
+
+# image: if not already declared
+
 stages:
   - build
-  - scan
-
-# Endor Labs Environment Variables Configuration
-variables:
-  ENDORCTL_VERSION: "latest"
-  ENDOR_NAMESPACE: "your namespace" # Insert your Endor Labs namespace here
-  DEBUG: "false"  ## Set DEBUG to "true" to send logs to Endor Labs support
-  
-  ENDOR_API_CREDENTIALS_KEY: $ENDOR_API_CREDENTIALS_KEY
-  ENDOR_API_CREDENTIALS_SECRET: $ENDOR_API_CREDENTIALS_SECRET
+  - endorScan
 
  # Build steps for your application
 
-Endor Labs Dependency Scan:
-  stage: scan
-  image: # If needed, Modify this image to align with the necessary build tools for your software packages
+endorScan:
+  stage: endorScan
+
   before_script:
 
-    # Install jq to download endorctl
-    - apt-get update && apt-get install -y jq
-    
-    # Download and integrity check the endorctl binary
-    - if [ "$ENDORCTL_VERSION" == "latest" ]; then
-        echo "Downloading latest version of endorctl";
-        ENDORCTL_SHA=$(curl https://api.endorlabs.com/meta/version | jq -r '.ClientChecksums.ARCH_TYPE_LINUX_AMD64');
-        VERSION=$(curl https://api.endorlabs.com/meta/version | jq -r '.Service.Version');
-        curl https://storage.googleapis.com/endorlabs/"$VERSION"/binaries/endorctl_"$VERSION"_linux_amd64 -o endorctl;
-        echo "$ENDORCTL_SHA  endorctl" | sha256sum -c;
-    - chmod +x ./endorctl
-
-# Scan with Endor Labs:
+    # Download and scan with endorctl
+    - curl -fsSL https://deb.nodesource.com/setup_current.x | bash
+    - apt-get install -y nodejs
+    - npm install -g endorctl
+  
   script:
-    - if [ "$DEBUG" == "true" ]; then
-        export ENDOR_LOG_VERBOSE=true;
-        export ENDOR_LOG_LEVEL=debug;
-      fi
-    - if [ "$CI_COMMIT_REF_NAME" == "$CI_DEFAULT_BRANCH" ]; then
-        export ENDOR_AS_DEFAULT_BRANCH=true;
-        export ENDOR_SCAN_DETACHED_REF_NAME="$CI_COMMIT_REF_NAME";
-      else
-        export ENDOR_CI_RUN=true;
-      fi
-      # Endor scan:
-    - ./endorctl scan 
+    - endorctl scan 
