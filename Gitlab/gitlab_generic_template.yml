@@ -1,7 +1,7 @@
 variables:
     ENDOR_NAMESPACE: "your-namespace" # Insert your Endor Labs namespace here
-    ENDOR_API_CREDENTIALS_KEY: $ENDOR_API_KEY
-    ENDOR_API_CREDENTIALS_SECRET: $ENDOR_API_SECRET
+    ENDOR_API_KEY: $ENDOR_API_KEY
+    ENDOR_API_SECRET: $ENDOR_API_SECRET
 
 # image: if not already declared
 
