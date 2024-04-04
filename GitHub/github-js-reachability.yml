@@ -37,7 +37,7 @@ jobs:
             enable_github_action_token: "true"
             pr: false
             github_token: ${{ secrets.GITHUB_TOKEN }}
-            additional_args: --disable-phantom=false
+            additional_args: --phantom-dependencies=true
 #            tags: "actor=${{ github.actor }},run-id=${{ github.run_id }}"
 #            enable_pr_comments: true
 #            sarif_file: endor-labs.sarif
