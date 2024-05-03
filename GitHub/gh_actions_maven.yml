@@ -1,0 +1,31 @@
+name: Scan
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  scan:
+    permissions:
+      security-events: write
+      contents: read
+      id-token: write
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v3
+    - name: Setup Java
+      uses: actions/setup-java@v3
+      with:
+        distribution: 'microsoft'
+        java-version: '17'
+    - name: Compile Package
+      run: mvn clean install
+    - name: Run endorctl
+      uses: endorlabs/github-action@main
+      with:
+        namespace: "your-namespace"
+        api: "https://api.endorlabs.com"
+        enable_github_action_token: "true"
