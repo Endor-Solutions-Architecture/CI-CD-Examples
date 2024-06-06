@@ -1,0 +1,39 @@
+---
+kind: pipeline
+type: docker
+name: endor-scan
+
+# Select the Platform Architecture
+platform:
+  os: linux
+  arch: amd64
+
+steps:
+- name: Maven Install
+  image: maven:3.6.3-jdk-11
+  commands:
+  - mvn install -DskipTests=true -Dmaven.javadoc.skip=true -B -V
+- name: Endor Scan
+  image: maven:3.6.3-jdk-11
+  environment:
+    ENDORCTL_VERSION: "latest"
+    ENDOR_NAMESPACE:
+      from_secret: "ENDOR_NAMESPACE"
+    ENDOR_API_CREDENTIALS_KEY:
+      from_secret: "ENDOR_API_CREDENTIALS_KEY"
+    ENDOR_API_CREDENTIALS_SECRET:
+      from_secret: "ENDOR_API_CREDENTIALS_SECRET"
+    DEBUG: "false"
+  commands:
+  - |
+    apt-get update && apt-get install -y jq
+    echo "Downloading version $ENDORCTL_VERSION of endorctl"
+    curl https://api.endorlabs.com/download/latest/endorctl_linux_amd64 -o endorctl
+    echo "Verify the checksum of the binary"
+    echo "$(curl -s https://api.endorlabs.com/sha/latest/endorctl_linux_amd64)  endorctl" | sha256sum -c
+    echo "Modify the permissions of the binary to ensure it is executable"
+    chmod +x ./endorctl
+    echo "Logging endorctl version"
+    ./endorctl --version
+    echo "Run a scan against the repository using your API key & secret pair"
+    ./endorctl scan --as-default-branch --detached-ref-name=${DRONE_BRANCH}
