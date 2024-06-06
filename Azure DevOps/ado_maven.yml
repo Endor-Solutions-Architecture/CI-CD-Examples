@@ -1,3 +1,8 @@
+# Maven
+# Build your Java project and run tests with Apache Maven.
+# Add steps that analyze code, save build artifacts, deploy, and more:
+# https://docs.microsoft.com/azure/devops/pipelines/languages/java
+
 trigger:
 - main
 
@@ -12,9 +17,14 @@ steps:
     jdkVersionOption: '1.17'
     jdkArchitectureOption: 'x64'
 
+# Implement and scan with Endor Labs after your build is complete
 - script: |
-    curl https://api.endorlabs.com/download/latest/endorctl_linux_amd64
+    curl https://api.endorlabs.com/download/latest/endorctl_linux_amd64 -o endorctl
   displayName: 'Download the Endor Labs CLI'
+
+- script: |
+    echo "$(curl -s https://api.endorlabs.com/sha/latest/endorctl_linux_amd64)  endorctl" | sha256sum -c
+  displayName: 'Verify the checksum of the binary'
     
 - script: |
     chmod +x ./endorctl
