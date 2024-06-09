@@ -1,0 +1,63 @@
+pipeline {
+	agent any
+
+    tools {
+        // Install the Maven version configured in Global Tool Configuration
+        maven 'Maven 3.8.4'
+        // Install the JDK version configured in Global Tool Configuration
+        jdk 'JDK 11'
+        // Install the Node version configured in Global Tool Configuration
+        nodejs "NodeJS 20.10"
+    }
+
+	environment {
+		// Replace with your namespace
+		ENDOR_API = "https://api.endorlabs.com"
+        ENDOR_NAMESPACE = "jenkins-demo"
+		// Move generated ENV details into endorctl config vars
+		ENDOR_API_CREDENTIALS_KEY = "$ENDOR_API_CREDS_USR"
+		ENDOR_API_CREDENTIALS_SECRET = "$ENDOR_API_CREDS_PSW"
+	}
+
+	stages {
+		stage ('OWASPJavaBenchmark - Checkout') {
+			steps {
+				checkout([$class: 'GitSCM', branches: [[name: '*/master']], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[credentialsId: '', url: 'https://github.com/OWASP-Benchmark/BenchmarkJava.git']]]) 
+			}
+		}
+
+		stage ('OWASPJavaBenchmark - Build') {
+			steps {
+				// Build the package
+				sh """ 
+				mvn clean package 
+				"""
+			}
+		}
+	
+		stage ('OWASPJavaBenchmark - ci_run Scan') {
+			steps {
+				sh 'echo "Confirm NodeJS is installed and check NodeJS version"'
+                sh 'node --version'
+                
+                sh 'echo "Downloading version $ENDORCTL_VERSION of endorctl"'
+                sh 'curl https://api.endorlabs.com/download/latest/endorctl_linux_amd64 -o endorctl'
+                
+                sh 'echo "Verify the checksum of the binary"'
+                sh 'echo "$(curl -s https://api.endorlabs.com/sha/latest/endorctl_linux_amd64)  endorctl" | sha256sum -c'
+                
+                sh 'echo "Modify the permissions of the binary to ensure it is executable"'
+                sh 'chmod +x ./endorctl'
+                
+                sh 'echo "Logging endorctl version"'
+                sh './endorctl --version'
+                
+                sh 'echo "Run a scan against the repository using your API key & secret pair"'
+                sh './endorctl scan -a $ENDOR_API -n $ENDOR_NAMESPACE --api-key $ENDOR_API_CREDENTIALS_KEY --api-secret $ENDOR_API_CREDENTIALS_SECRET'
+
+				// Archive the scan results
+				archiveArtifacts allowEmptyArchive: false, artifacts: 'endorlabs-results.json', caseSensitive: true, defaultExcludes: true, fingerprint: true, onlyIfSuccessful: false 
+			}
+		}
+	}
+}
