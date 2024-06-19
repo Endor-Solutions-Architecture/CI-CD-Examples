@@ -1,0 +1,38 @@
+name: Endor Labs - JavaScript SCA Scan on PR
+
+on:
+  workflow_dispatch:
+
+jobs:
+  scan-repo:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+        
+        - name: Checkout Repository
+          uses: actions/checkout@v3
+
+        - name: Setup Node
+          uses: actions/setup-node@v3
+          with:
+            node-version: 18
+            cache: 'npm'
+            cache-dependency-path: package-lock.json
+          
+        - name: Build Dependencies
+          run: npm ci
+          
+        - name: Endor Labs SCA Scan
+          uses: endorlabs/github-action@main
+          with:
+            namespace: "matt-demo"
+            api: "https://api.endorlabs.com"
+            scan_summary_output_type: "table"
+            enable_github_action_token: true
+            scan_dependencies: true
+            #scan_secrets: true
+            #scan_git_logs: true
+            #additional_args: "--tools --github --ghactions"
+            tags: "actor = ${{ github.actor }},run-id = ${{ github.run_id }},event name = ${{ github.event_name }},workflow = ${{ github.workflow }},github sha = ${{ github.sha }}"
