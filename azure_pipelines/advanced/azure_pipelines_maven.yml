@@ -1,0 +1,66 @@
+# Maven
+# Build your Java project and run tests with Apache Maven.
+# Add steps that analyze code, save build artifacts, deploy, and more:
+# https://docs.microsoft.com/azure/devops/pipelines/languages/java
+
+trigger:
+  branches:
+    include:
+    - main
+
+pr: 
+  branches:
+    include:
+    - main
+
+pool:
+  vmImage: ubuntu-latest
+
+steps:
+- task: Maven@3
+  inputs:
+    mavenPomFile: 'pom.xml'
+    mavenOptions: '-Xmx3072m'
+    javaHomeOption: 'JDKVersion'
+    jdkVersionOption: '1.8'
+    jdkArchitectureOption: 'x64'
+    goals: 'package'
+
+# Implement and scan with Endor Labs after your build is complete
+- script: |
+    curl https://api.endorlabs.com/download/latest/endorctl_linux_amd64 -o endorctl
+    echo "$(curl -s https://api.endorlabs.com/sha/latest/endorctl_linux_amd64)  endorctl" | sha256sum -c
+    if [ $? -ne 0 ]; then 
+      echo "Integrity check failed" 
+      exit 1
+    fi
+  displayName: 'Download and Verify endorctl'
+    
+- script: |
+    chmod +x ./endorctl
+  displayName: 'Modify the permissions of the binary to ensure it is executable'
+
+# Scan the main branch upon merge    
+- script: |
+    BRANCH_NAME=$(echo $(Build.SourceBranch) | sed 's/refs\/heads\///')
+    ./endorctl scan --api-key $(ENDOR_API_KEY) --api-secret $(ENDOR_API_SECRET) -n $(ENDOR_NAMESPACE) --detached-ref-name=$BRANCH_NAME --as-default-branch
+  displayName: 'Run an Endor Labs scan on push to main'
+  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+
+# Scan PRs    
+- script: |
+    BRANCH_NAME=$(echo $(Build.SourceBranch) | sed 's/refs\/heads\///')
+    ./endorctl scan --api-key $(ENDOR_API_KEY) --api-secret $(ENDOR_API_SECRET) -n $(ENDOR_NAMESPACE) --output-type=json --pr --pr-baseline=main > output.json
+  displayName: 'Run an Endor Labs scan on PRs'
+  condition: eq(variables['Build.Reason'], 'PullRequest')
+
+# Add comments to PRs
+- task: PowerShell@2
+  condition: eq(variables['Build.Reason'], 'PullRequest')
+  displayName: Post Endor Results to the PR
+  env:
+    SYSTEM_ACCESSTOKEN: $(System.AccessToken)  
+  inputs:
+      targetType: filePath
+      filePath: AddEndorCommentToPR.ps1
+      arguments: '-jsonFilePath $(Build.SourcesDirectory)/output.json'
