@@ -39,22 +39,13 @@ jobs:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         log_verbose: true
     
-    - name: Validate policy againts this project
+    - name: Evaluate policy against this project
       run: |
-          #get uuid of scanned project from this repo 
-          export ENDOR_NAMESPACE=${{ secrets.ENDOR_NAMESPACE }}          
-          THIS_PROJ_UUID=$(endorctl api list -r Project \
-            --enable-github-action-token=true \
-            --filter 'meta.name matches ${{ github.event.repository.name }}' \
-            --field-mask "uuid" | jq '.list.objects[].uuid' | tr -d '\n' | tr -d '\r' | xargs)
-          
-          echo "Validating policy againts Project UUID: $THIS_PROJ_UUID"
-          
-          # Validate the policy using the extracted UUID
           endorctl validate policy \
+          -n ${{ secrets.ENDOR_NAMESPACE }} \
           --enable-github-action-token=true \
           --policy-uuid=669acb19490b6653346415a0 \
-          --query data.archived.match_all_findings_for_archived_repos \
-          --uuid=$THIS_PROJ_UUID -o json
+          --output-type=json \
+          --filter='meta.name matches ${{ github.event.repository.name }}'
 
           
