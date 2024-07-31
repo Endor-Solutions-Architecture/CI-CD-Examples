@@ -1,0 +1,51 @@
+
+name: Endor SCA and Validating Policy
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    permissions:
+      security-events: write # Used to upload Sarif artifact to GitHub
+      contents: read # Used to check out a private repository
+      actions: read # Required for private repositories to upload Sarif files. GitHub Advanced Security licenses are required.
+      id-token: write # Used for keyless authentication with Endor Labs
+      issues: write # Required to automatically comment on PRs for new policy violations
+
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Endor Scan
+      uses: endorlabs/github-action@main
+      with:
+        namespace: ${{ secrets.ENDOR_NAMESPACE }}
+        scan_dependencies: true
+        scan_secrets: true
+        pr: false
+        enable_github_action_token: true
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        log_verbose: true
+    
+    - name: Validate policy againts this project
+      run: |
+          #Get uuid of scanned project from this repo 
+          export ENDOR_NAMESPACE=${{ secrets.ENDOR_NAMESPACE }}          
+          THIS_PROJ_UUID=$(endorctl api list -r Project \
+            --enable-github-action-token=true \
+            --filter 'meta.name matches ${{ github.event.repository.name }}' \
+            --field-mask "uuid" | jq '.list.objects[].uuid' | tr -d '\n' | tr -d '\r' | xargs)
+          
+          echo "Validating policy againts Project UUID: $THIS_PROJ_UUID"
+          
+          # Validate the policy using the extracted UUID
+          endorctl validate policy \
+          --enable-github-action-token=true \
+          --policy-uuid=<YOUR_POLICY_UUID> \
+          --query data.<YOUR_PACKAGE>.<YOUR_QUERY_NAME> \
+          --uuid=$THIS_PROJ_UUID -o json
+
+          
