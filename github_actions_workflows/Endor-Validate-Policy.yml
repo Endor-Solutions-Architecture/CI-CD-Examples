@@ -33,7 +33,7 @@ jobs:
     - name: Evaluate policy against this project
       run: |
           endorctl validate policy \
-          -n ${{ secrets.ENDOR_NAMESPACE }} \
+          --namespace=${{ secrets.ENDOR_NAMESPACE }} \
           --enable-github-action-token=true \
           --policy-uuid=<YOUR_POLICY_UUID1,YOUR_POLICY_UUID2> \
           --output-type=json \
