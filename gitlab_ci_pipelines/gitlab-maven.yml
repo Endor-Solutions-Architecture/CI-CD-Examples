@@ -19,10 +19,10 @@ endorScan:
   stage: endorScan
   
   before_script:
-    # Download and scan with endorctl
+    # If npm isn't already on the runner, download and scan with endorctl
     - curl -fsSL https://deb.nodesource.com/setup_current.x | bash
     - apt-get install -y nodejs
     - npm install -g endorctl
   
   script:
-    - endorctl scan 
+    - endorctl scan # For additional capabilities, add: --secrets --tools
