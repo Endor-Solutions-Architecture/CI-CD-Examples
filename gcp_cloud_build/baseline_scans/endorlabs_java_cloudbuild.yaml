@@ -11,22 +11,12 @@ steps:
         git fetch origin
         echo "Checking out branch: ${BRANCH_NAME}"
         git checkout ${BRANCH_NAME}
-  # Step 2: Install Node.js 20.10
-  - name: 'maven:3.8.6-openjdk-11'
-    entrypoint: 'bash'
-    args:
-      - '-c'
-      - |
-        curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
-        apt-get install -y nodejs
-        node --version
-    id: 'Install Node.js'
-  # Step 3: Build With Maven
+  # Step 2: Build With Maven
   - name: 'maven:3.8.6-openjdk-11'
     entrypoint: 'mvn'
     args: ['clean', 'install']
     id: 'Build'
-  # Step 4: Install latest version of endorctl
+  # Step 3: Install latest version of endorctl
   - name: 'maven:3.8.6-openjdk-11'
     entrypoint: 'bash'
     args:
@@ -37,7 +27,7 @@ steps:
         chmod +x ./endorctl
         ./endorctl --version
     id: 'Install latest version of endorctl'
-  # Step 5: SCA Scan With EndorLabs
+  # Step 4: SCA Scan With EndorLabs
   - name: 'maven:3.8.6-openjdk-11'
     entrypoint: 'bash'
     args: ["-c", "./endorctl scan -n $$ENDOR_NAMESPACE --api-key $$ENDOR_API_CREDENTIALS_KEY --api-secret $$ENDOR_API_CREDENTIALS_SECRET"]

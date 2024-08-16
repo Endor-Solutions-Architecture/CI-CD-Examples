@@ -11,18 +11,7 @@ steps:
         git fetch origin
         echo "Checking out branch: ${BRANCH_NAME}"
         git checkout ${BRANCH_NAME}
-  # Step 2: Install Node.js 20.10
-  - name: 'python'
-    entrypoint: 'bash'
-    args:
-      - '-c'
-      - |
-        ls -l
-        curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
-        apt-get install -y nodejs
-        node --version
-    id: 'Install Node.js'
-  # Step 3: Install Poetry & Build The App
+  # Step 2: Install Poetry & Build The App
   - name: 'python'
     entrypoint: 'bash'
     args:
@@ -34,7 +23,7 @@ steps:
         source venv/bin/activate
         poetry install
     id: 'Install Poetry'
-  # Step 4: Install latest version of endorctl
+  # Step 3: Install latest version of endorctl
   - name: 'python'
     entrypoint: 'bash'
     args:
@@ -45,7 +34,7 @@ steps:
         chmod +x ./endorctl
         ./endorctl --version
     id: 'Install latest version of endorctl'
-  # Step 5: SCA Scan With EndorLabs
+  # Step 4: SCA Scan With EndorLabs
   - name: 'python'
     entrypoint: 'bash'
     args: ["-c", "./endorctl scan -n $$ENDOR_NAMESPACE --api-key $$ENDOR_API_CREDENTIALS_KEY --api-secret $$ENDOR_API_CREDENTIALS_SECRET --pr --pr-baseline=$$BASELINE_BRANCH --pr-incremental"]
