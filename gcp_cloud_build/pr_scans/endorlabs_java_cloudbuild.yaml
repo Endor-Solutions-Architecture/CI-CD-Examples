@@ -1,0 +1,54 @@
+steps:
+  # Step 1: Fetch The Trigger Branch
+  # This step addresses a known issue where Cloud Build renames the pulled branch to master.
+  # If you are not encountering this issue with your build, you can skip this step.
+  - name: 'gcr.io/cloud-builders/git'
+    entrypoint: 'bash'
+    args: 
+      - '-c'
+      - |
+        echo "Fetching all branches..."
+        git fetch origin
+        echo "Checking out branch: ${BRANCH_NAME}"
+        git checkout ${BRANCH_NAME}
+  # Step 2: Build With Maven
+  - name: 'maven:3.8.6-openjdk-11'
+    entrypoint: 'mvn'
+    args: ['clean', 'install']
+    id: 'Build'
+  # Step 3: Install latest version of endorctl
+  - name: 'maven:3.8.6-openjdk-11'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        curl https://api.endorlabs.com/download/latest/endorctl_linux_amd64 -o endorctl
+        echo "$(curl -s https://api.endorlabs.com/sha/latest/endorctl_linux_amd64)  endorctl" | sha256sum -c
+        chmod +x ./endorctl
+        ./endorctl --version
+    id: 'Install latest version of endorctl'
+  # Step 4: SCA Scan With EndorLabs
+  - name: 'maven:3.8.6-openjdk-11'
+    entrypoint: 'bash'
+    args: ["-c", "./endorctl scan -n $$ENDOR_NAMESPACE --api-key $$ENDOR_API_CREDENTIALS_KEY --api-secret $$ENDOR_API_CREDENTIALS_SECRET --pr --pr-baseline=$$BASELINE_BRANCH --pr-incremental"]
+    secretEnv: ['ENDOR_API_CREDENTIALS_KEY', 'ENDOR_API_CREDENTIALS_SECRET']
+    env:
+      - 'ENDOR_NAMESPACE=demo'
+      - 'BASELINE_BRANCH=master'
+    id: 'SCA Scan With EndorLabs'
+
+# Fetch Endor Labs API Token and Secret From Secrets Manager
+availableSecrets:
+  secretManager:
+  - versionName: projects/{your-project-id}/secrets/endor-api-key/versions/1
+    env: 'ENDOR_API_CREDENTIALS_KEY'
+  - versionName: projects/{your-project-id}/secrets/endor-api-secret/versions/1
+    env: 'ENDOR_API_CREDENTIALS_SECRET'
+
+options:
+  # Choose your log configuration
+  logging: 'CLOUD_LOGGING_ONLY'
+  # Select a private pool if the default runners do not meet the minimum requirements.
+  pool:
+    name: 'projects/{your-project-id}/locations/{your_location}/workerPools/{your_worker_pool_id}'
+
