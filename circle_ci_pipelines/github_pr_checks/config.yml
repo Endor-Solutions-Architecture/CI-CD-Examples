@@ -44,7 +44,7 @@ jobs:
                   fi
                   chmod +x ./endorctl
                   ./endorctl --version
-                  ./endorctl scan --quick-scan --pr --dependencies --github-token="$GITHUB_ACCESS_TOKEN" --github-pr-id=$pr_number --enable-pr-comments
+                  ./endorctl scan --pr --dependencies --github-token="$GITHUB_ACCESS_TOKEN" --github-pr-id=$pr_number --enable-pr-comments
                 else
                   echo "PR is not reviewed"
                 fi
