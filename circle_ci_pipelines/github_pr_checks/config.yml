@@ -1,0 +1,57 @@
+version: 2.1
+orbs:
+  python: circleci/python@2
+jobs:
+  run-scanner:
+    # Install dependencies and run tests
+    docker:
+      - image: cimg/python:3.12-node
+    environment:
+      ENDORCTL_VERSION: "latest"
+      ENDOR_NAMESPACE: "<YOUR_NAMESPACE>"
+      GH_USER: "<YOUR_GITHUB_USER>"
+      CIRCLE_PROJECT_REPONAME: "<YOUR_REPONAME>"
+    steps:
+      - checkout 
+      - run:
+          name: "Endor Scan"
+          command: |         
+            sudo apt-get install jq
+            #get pr info for this project and branch that triggered this workflow
+            pr_response=$(curl --location --request GET "https://api.github.com/repos/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME/pulls?head=$CIRCLE_PROJECT_USERNAME:$CIRCLE_BRANCH&state=open" -u $GH_USER:$GITHUB_ACCESS_TOKEN)
+            
+            if [ $(echo $pr_response | jq length) -eq 0 ]; then
+              echo "No PR found to update"
+            else
+              echo "PR found"
+              pr_number=$(echo $pr_response | jq -r ".[].number")
+              echo "PR#: $pr_number"
+              pr_reviews=$(curl --location --request GET "https://api.github.com/repos/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME/pulls/$pr_number/reviews" -u $GH_USER:$GITHUB_ACCESS_TOKEN)
+              
+              if [ $(echo $pr_reviews | jq length) -eq 0 ]; then
+                echo "No reviews found for PR"
+              else
+                echo "PR is in review state"
+                pr_review_state=$(echo $pr_reviews | jq -r ".[].state")
+                if [ $pr_review_state == "APPROVED" ]; then
+                  echo "PR is reviewed"
+                  echo "Downloading endorctl and performing scan"
+                  curl https://api.endorlabs.com/download/latest/endorctl_linux_amd64 -o endorctl
+                  echo "$(curl -s https://api.endorlabs.com/sha/latest/endorctl_linux_amd64)  endorctl" | sha256sum -c;
+                  if [ $? -ne 0 ]; then
+                    echo "Integrity check failed";
+                    exit 1;
+                  fi
+                  chmod +x ./endorctl
+                  ./endorctl --version
+                  ./endorctl scan --quick-scan --pr --dependencies --github-token="$GITHUB_ACCESS_TOKEN" --github-pr-id=$pr_number --enable-pr-comments
+                else
+                  echo "PR is not reviewed"
+                fi
+              fi
+            fi
+workflows:
+  build-and-test:
+    jobs:
+      - run-scanner
+
