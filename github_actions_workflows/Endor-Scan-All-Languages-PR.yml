@@ -59,7 +59,7 @@ jobs:
             enable_github_action_token: true
             scan_dependencies: true
             pr: true
-            pr_baseline: master # main, develop, etc
+            pr_baseline: main # develop, etc
             additional_args: "--pr-incremental" # Additional parameters can be passed with whitespace separation, for example: --github to enable RSPM
             # enable_pr_comments: true <-- Uncomment to enable PR comments if enabled comment out pr_baseline
             # scan_summary_output_type: "table" <-- Uncomment to choose the format, default it table

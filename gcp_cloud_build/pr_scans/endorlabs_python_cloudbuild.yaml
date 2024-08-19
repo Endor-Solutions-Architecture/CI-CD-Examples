@@ -41,7 +41,7 @@ steps:
     secretEnv: ['ENDOR_API_CREDENTIALS_KEY', 'ENDOR_API_CREDENTIALS_SECRET']
     env:
       - 'ENDOR_NAMESPACE=demo'
-      - 'BASELINE_BRANCH=master'
+      - 'BASELINE_BRANCH=main' # develop, etc
     id: 'SCA Scan With EndorLabs'
 
 # Fetch Endor Labs API Token and Secret From Secrets Manager

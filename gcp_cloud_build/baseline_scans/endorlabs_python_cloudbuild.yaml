@@ -1,6 +1,6 @@
 steps:
   # Step 1: Fetch The Trigger Branch
-  # This step addresses a known issue where Cloud Build renames the pulled branch to master.
+  # This step addresses a known issue where Cloud Build renames the pulled branch to main.
   # If you are not encountering this issue with your build, you can skip this step.
   - name: 'gcr.io/cloud-builders/git'
     entrypoint: 'bash'
