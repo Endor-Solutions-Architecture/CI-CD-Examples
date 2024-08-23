@@ -54,6 +54,14 @@ steps:
   displayName: 'Run an Endor Labs scan on PRs'
   condition: eq(variables['Build.Reason'], 'PullRequest')
 
+# Download the comment crration script
+- task: DownloadSecureFile@1
+  condition: eq(variables['Build.Reason'], 'PullRequest')
+  name: downloadPs1
+  inputs:
+    secureFile: 'AddEndorCommentToPR.ps1' # Name of the secure file
+  displayName: 'Download Secure PowerShell Script'
+
 # Add comments to PRs
 - task: PowerShell@2
   condition: eq(variables['Build.Reason'], 'PullRequest')
@@ -62,5 +70,5 @@ steps:
     SYSTEM_ACCESSTOKEN: $(System.AccessToken)  
   inputs:
       targetType: filePath
-      filePath: AddEndorCommentToPR.ps1
+      filePath: $(downloadPs1.secureFilePath)
       arguments: '-jsonFilePath $(Build.SourcesDirectory)/output.json'
