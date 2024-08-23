@@ -1,4 +1,4 @@
-name: Endor Labs - JavaScript SCA Scan on PR
+name: Endor Labs - JavaScript SCA Scan on Main Branch
 
 on:
   workflow_dispatch:
@@ -29,16 +29,11 @@ jobs:
           with:
             namespace: "matt-demo"
             api: "https://api.endorlabs.com"
+            pr: false
             enable_github_action_token: true
             scan_dependencies: true
-            pr: true
-            pr_baseline: main # develop, etc
-            additional_args: "--pr-incremental" # Additional parameters can be passed with whitespace separation, for example: --github to enable RSPM
-            # enable_pr_comments: true <-- Uncomment to enable PR comments if enabled comment out pr_baseline
-            # scan_summary_output_type: "table" <-- Uncomment to choose the format, default it table
-            # github_token: ${{ secrets.GH_PR_TOKEN }} # needs to be enabled if you want to use enable_pr_comments
             # scan_secrets: true <-- Uncomment to enable secrets scanning
             # scan_git_logs: true <-- Uncomment to scan git logs for committed secrets
             # scan_github_actions: true <-- Uncomment to scan GH Action Vulnerabilities
             # scan_tools: true <-- Uncomment to scan identified tools
-            tags: "actor = ${{ github.actor }},run-id = ${{ github.run_id }},event name = ${{ github.event_name }},workflow = ${{ github.workflow }},github sha = ${{ github.sha }}"
+            additional_args: "--as-default-branch --phantom-dependencies=true" # Additional parameters can be passed with whitespace separation, for example: --github to enable RSPM
