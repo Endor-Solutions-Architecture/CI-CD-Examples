@@ -54,7 +54,6 @@ steps:
   displayName: 'Run an Endor Labs scan on PRs'
   condition: eq(variables['Build.Reason'], 'PullRequest')
 
-# Download the comment crration script
 - task: DownloadSecureFile@1
   condition: eq(variables['Build.Reason'], 'PullRequest')
   name: downloadPs1
