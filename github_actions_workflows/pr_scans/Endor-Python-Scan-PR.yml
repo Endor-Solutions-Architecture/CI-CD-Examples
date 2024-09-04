@@ -33,7 +33,8 @@ jobs:
             scan_dependencies: true
             pr: true
             pr_baseline: main # develop, etc
-            additional_args: "--pr-incremental" # Additional parameters can be passed with whitespace separation, for example: --github to enable RSPM
+            additional_args: "--pr-incremental --call-graph-languages=javascript" # Additional parameters can be passed with whitespace separation, for example: --github to enable RSPM
+            # If your repo is a polyglot repo then include multiple languages as part of --call-graph-languages=javascript,go,python,c#,ruby
             # enable_pr_comments: true <-- Uncomment to enable PR comments if enabled comment out pr_baseline
             # scan_summary_output_type: "table" <-- Uncomment to choose the format, default it table
             # github_token: ${{ secrets.GH_PR_TOKEN }} # needs to be enabled if you want to use enable_pr_comments
