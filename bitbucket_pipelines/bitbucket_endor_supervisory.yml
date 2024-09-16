@@ -1,0 +1,38 @@
+image: atlassian/default-image:3
+
+pipelines:
+  default:
+    - step:
+        name: Clone and Run Command
+        script:
+          # Download the latest CLI for Linux amd64
+          - curl -sL https://api.endorlabs.com/download/latest/endorctl_linux_amd64 -o endorctl
+
+          # Verify the checksum of the binary
+          - echo "$(curl -s https://api.endorlabs.com/sha/latest/endorctl_linux_amd64)  endorctl" | sha256sum -c
+
+          # Modify the permissions of the binary to ensure it is executable
+          - chmod +x ./endorctl
+
+          # Create an alias endorctl of the binary to ensure it is available in other directories
+          - export PATH="$PATH:$PWD"
+
+          # Fetch all repositories from the workspace
+          - REPOS=$(curl --request GET --url "https://api.bitbucket.org/2.0/repositories/$WORKSPACE_NAME" --header "Authorization:Bearer $ACCESS_TOKEN" | jq -r '.values[].slug')
+          
+          # List all repos found
+          - echo "the following repos were returned $REPOS"
+          
+          # Clone each repository and run the CLI command
+          - for REPO in $REPOS; do 
+              echo "scanning $REPO";
+              git clone "https://x-token-auth:$ACCESS_TOKEN@bitbucket.org/$WORKSPACE_NAME/$REPO.git"; 
+              cd $REPO; 
+              endorctl scan --bypass-host-check --secrets --git-logs --dependencies --quick-scan --install-build-tools --insecure-sandbox -n $ENDOR_NAMESPACE; 
+              cd ..; 
+              rm -rf $REPO; 
+            done
+
+definitions:
+  caches:
+    pip: ~/.cache/pip
