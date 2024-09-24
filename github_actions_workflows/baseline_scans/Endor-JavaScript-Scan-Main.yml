@@ -36,4 +36,5 @@ jobs:
             # scan_git_logs: true <-- Uncomment to scan git logs for committed secrets
             # scan_github_actions: true <-- Uncomment to scan GH Action Vulnerabilities
             # scan_tools: true <-- Uncomment to scan identified tools
-            additional_args: "--as-default-branch" # Additional parameters can be passed with whitespace separation, for example: --github to enable RSPM
+            additional_args: "--as-default-branch --call-graph-languages=javascript" # Additional parameters can be passed with whitespace separation, for example: --github to enable RSPM
+            # If your repo is a polyglot repo then include multiple languages as part of --call-graph-languages=javascript,go,python,c#,ruby

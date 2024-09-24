@@ -1,7 +1,8 @@
-name: Endor Labs - Python SCA Scan on PR
+name: Endor Labs - JavaScript SCA Scan on PR
+
 on:
-  workflow_dispatch
-    
+  workflow_dispatch:
+
 jobs:
   scan-repo:
     runs-on: ubuntu-latest
@@ -9,21 +10,20 @@ jobs:
       id-token: write
       contents: read
     steps:
-
+        
         - name: Checkout Repository
           uses: actions/checkout@v3
-          
-        - name: Set up Python 3.11
-          uses: actions/setup-python@v5
+
+        - name: Setup Node
+          uses: actions/setup-node@v3
           with:
-            python-version: '3.11'
-            cache: 'pip'
-    
-        - name: Install dependencies
-          run: |
-            python -m pip install --upgrade pip
-            pip install -r requirements.txt
-            
+            node-version: 18
+            cache: 'npm'
+            cache-dependency-path: package-lock.json
+          
+        - name: Build Dependencies
+          run: npm ci
+          
         - name: Endor Labs SCA Scan
           uses: endorlabs/github-action@main
           with:
@@ -33,7 +33,7 @@ jobs:
             scan_dependencies: true
             pr: true
             pr_baseline: main # develop, etc
-            additional_args: "--pr-incremental" # Additional parameters can be passed with whitespace separation, for example: --github to enable RSPM
+            additional_args: "--pr-incremental --phantom-dependencies=true" # Additional parameters can be passed with whitespace separation, for example: --github to enable RSPM
             # enable_pr_comments: true <-- Uncomment to enable PR comments if enabled comment out pr_baseline
             # scan_summary_output_type: "table" <-- Uncomment to choose the format, default it table
             # github_token: ${{ secrets.GH_PR_TOKEN }} # needs to be enabled if you want to use enable_pr_comments
