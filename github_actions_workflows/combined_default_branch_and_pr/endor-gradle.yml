@@ -1,0 +1,74 @@
+name: Endor Labs Dependency Scan
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+
+jobs:
+  scan-pr:
+    if: ${{ github.event_name == 'pull_request' }}
+    permissions:
+      security-events: write # Used to upload Sarif artifact to GitHub
+      contents: read # Used to check out a private repository
+      actions: read # Required for private repositories to upload Sarif files. GitHub Advanced Security licenses are required.
+      id-token: write # Used for keyless authentication with Endor Labs
+      pull-requests: write # Required to automatically comment on PRs for new policy violations
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v3
+    - name: Setup Java
+      uses: actions/setup-java@v3
+      with:
+        distribution: 'microsoft'
+        java-version: '17'
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v4
+    - name: Build Package
+      run: ./gradlew build
+    - name: Endor Labs Scan Pull Request
+      uses: endorlabs/github-action@v1.1.4
+      with:
+        namespace: 'example' # Replace with your Endor Labs tenant namespace
+        scan_dependencies: true
+        scan_secrets: false
+        scan_summary_output_type: 'table'
+        pr: true
+        enable_pr_comments: true # Required to automatically comment on PRs for new policy violations
+        github_token: ${{ secrets.GITHUB_TOKEN }} # Required for PR comments on new policy violations
+
+  scan-default:
+    if: ${{ github.ref_name == github.event.repository.default_branch }}
+    permissions:
+      id-token: write
+      repository-projects: read
+      pull-requests: read
+      contents: read
+    name: endor-scan-main
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v3
+    - name: Setup Java
+      uses: actions/setup-java@v3
+      with:
+        distribution: 'microsoft'
+        java-version: '17'
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v4
+    - name: Build Package
+      run: ./gradlew build
+    - name: 'Endor Labs Scan Push to main'
+      uses: endorlabs/github-action@v1.1.4
+      with:
+        namespace: 'example' # Replace with your Endor Labs tenant namespace
+        scan_dependencies: true
+        scan_secrets: false
+        scan_summary_output_type: 'table'
+        pr: false
+        sarif_file: 'findings.sarif'
+    - name: Upload findings to github
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: 'findings.sarif'
