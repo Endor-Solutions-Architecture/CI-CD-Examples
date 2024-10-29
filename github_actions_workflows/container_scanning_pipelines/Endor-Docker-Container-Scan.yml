@@ -69,6 +69,5 @@ jobs:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         log_verbose: true
         log_level: "info"
-        project_name: "your_project_name"
         scan_summary_output_type: "table"
         image: ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPO }}:your_tag
