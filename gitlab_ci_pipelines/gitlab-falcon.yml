@@ -1,0 +1,19 @@
+image: 
+  name: endorcipublic.azurecr.io/endorctl:latest
+  entrypoint: [""]
+
+stages: 
+    - security
+
+variables:
+   ENDORCTL_VERSION: "latest" 
+   ENDOR_NAMESPACE: "target-namespace" 
+    
+sca:
+    stage: security
+    allow_failure: true
+    script:
+      - curl https://api.endorlabs.com/download/latest/endorctl_linux_amd64 -o endorctl
+      - echo "$(curl -s https://api.endorlabs.com/sha/latest/endorctl_linux_amd64)  endorctl" | sha256sum -c
+      - chmod +x ./endorctl
+      - ./endorctl scan --install-build-tools --enable-build-tools-version-detection --insecure-sandbox --as-default-branch --detached-ref-name "main"
