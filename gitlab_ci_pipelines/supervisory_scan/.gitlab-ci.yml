@@ -1,0 +1,69 @@
+stages:
+  - fetch-repos
+  - generate-child-ci
+  - trigger-child-pipeline
+
+variables:
+  GITLAB_API_URL: "https://gitlab.com/api/v4"
+  DYNAMIC_PIPELINE_FILE: ".gitlab-ci.child.yml"
+  ENDOR_NAMESPACE: "nate-learn.gitlab"
+  GITLAB_GROUP: "endor6554611"
+  BATCH_SIZE: 5
+
+fetch_repositories:
+  stage: fetch-repos
+  image: badouralix/curl-jq
+  script:
+    - |
+      echo "Fetching repositories from GitLab group: $GITLAB_GROUP"
+
+      if [ -z "$GITLAB_GROUP" ]; then
+          echo "Error: GITLAB_GROUP is not set!"
+          exit 1
+      fi
+
+      curl --silent --header "PRIVATE-TOKEN: $GITLAB_TOKEN" \
+        "$GITLAB_API_URL/groups/$GITLAB_GROUP/projects?per_page=100" \
+        | jq -c '[.[] | {repo_url: .ssh_url_to_repo, repo_name: .path}]' > repo_list.json
+
+      echo "Repositories fetched:"
+      cat repo_list.json
+
+      if [ ! -s repo_list.json ]; then
+          echo "Error: No repositories found!"
+          exit 1
+      fi
+  artifacts:
+    paths:
+      - repo_list.json
+    expire_in: 1h
+
+generate_child_ci:
+  stage: generate-child-ci
+  image: python:3.9
+  dependencies:
+    - fetch_repositories
+  script:
+    - |
+      echo "Installing dependencies..."
+      pip install pyyaml
+      
+      echo "Generating dynamic child pipeline with Python..."
+      python3 generate_child_ci.py
+      cat .gitlab-ci.child.yml
+
+      if [ ! -f "$DYNAMIC_PIPELINE_FILE" ]; then
+          echo "Error: $DYNAMIC_PIPELINE_FILE was not created!"
+          exit 1
+      fi
+  artifacts:
+    paths:
+      - $DYNAMIC_PIPELINE_FILE
+    expire_in: 1h
+
+trigger_child_pipeline:
+  stage: trigger-child-pipeline
+  trigger:
+    include:
+      - artifact : $DYNAMIC_PIPELINE_FILE
+        job: generate_child_ci
