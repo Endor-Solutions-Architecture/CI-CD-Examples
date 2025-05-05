@@ -1,0 +1,78 @@
+# .NET build pipeline for macOS
+# Build and test a .NET project on macOS using Azure Pipelines
+
+trigger:
+- main
+
+pool:
+  vmImage: 'macOS-latest'
+
+variables:
+  - group: arsalan-learn-variable-group
+  - name: solution
+    value: 'MyApp/MyApp.csproj'
+  - name: buildPlatform
+    value: 'Any CPU'
+  - name: buildConfiguration
+    value: 'Release'
+
+steps:
+- task: UseDotNet@2
+  displayName: 'Install .NET SDK'
+  inputs:
+    packageType: 'sdk'
+    version: '8.0.x'
+    installationPath: $(Agent.ToolsDirectory)/dotnet
+
+- task: DotNetCoreCLI@2
+  displayName: 'Restore NuGet packages'
+  inputs:
+    command: 'restore'
+    projects: '$(solution)'
+
+- task: DotNetCoreCLI@2
+  displayName: 'Build'
+  inputs:
+    command: 'build'
+    projects: '$(solution)'
+    arguments: '--configuration $(buildConfiguration)'
+
+- bash: |
+    echo "Downloading latest version of endorctl"
+    # Download the latest CLI for MacOS AMD64
+    curl https://api.endorlabs.com/download/latest/endorctl_macos_amd64 -o endorctl
+    
+    # Verify the checksum of the binary
+    echo "$(curl -s https://api.endorlabs.com/sha/latest/endorctl_macos_amd64)  endorctl" | shasum -a 256 -c
+    if [ $? -ne 0 ]; then
+        echo "Integrity check failed"
+        exit 1
+    fi
+    
+    # Modify the permissions of the binary to ensure it is executable
+    chmod +x ./endorctl
+    
+    # Create an alias of the endorctl binary to ensure it is available in other directories
+    alias endorctl="$PWD/endorctl"        
+    
+    # Run the scan
+    ./endorctl scan -n arsalan-learn -s scanresults.sarif --as-default-branch=true --detached-ref-name=main
+  displayName: 'Endor Security Scan'
+  env:
+    ENDOR_API_CREDENTIALS_KEY: $(ENDOR_API_CREDENTIALS_KEY)
+    ENDOR_API_CREDENTIALS_SECRET: $(ENDOR_API_CREDENTIALS_SECRET)
+
+- task: DotNetCoreCLI@2
+  displayName: 'Publish'
+  inputs:
+    command: 'publish'
+    publishWebProjects: false
+    projects: '$(solution)'
+    arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)'
+    zipAfterPublish: true
+
+- task: PublishBuildArtifacts@1
+  displayName: 'Publish artifacts'
+  inputs:
+    pathtoPublish: '$(Build.ArtifactStagingDirectory)'
+    artifactName: 'MyApp' 
