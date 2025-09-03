@@ -1,0 +1,78 @@
+
+name: Endorlabs - Scan A Javascript Workspace App
+
+on:
+  workflow_call:
+    inputs:
+      runner:
+        description: Runner used to execute the job. It must have access to the build dependencies
+        type: string
+        default: buildkit
+      app_name:
+        description: App of the application being run
+        type: string
+        default: ''
+      include_typescript:
+        description: Include Typescript scanning
+        type: boolean
+        default: false
+      endor_args:
+        type: string
+        default: --bypass-host-check
+      endor_default_branch:
+        type: boolean
+        default: true
+      sast_scan:
+        description: Whether or not perform a sast scan
+        type: boolean
+        default: true
+    secrets:
+      ENDOR_API_CREDENTIALS_KEY:
+        description: API key for Endorlabs
+        required: true
+      ENDOR_API_CREDENTIALS_SECRET:
+        description: API key secret for Endorlabs
+        required: true
+      NPM_AUTH_TOKEN:
+        description: NPM token to use for builds
+        required: false
+jobs:
+  endorlabs_cli_scan:
+    timeout-minutes: 90
+    env:
+      NPM_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
+      ENDOR_OSS_API: https://api.oss.endorlabs.com
+      ENDOR_SCAN_SEMGREP_PROGRAM: ${{ inputs.sast_scan && 'opengrep' || '' }}
+    runs-on: ${{inputs.runner}}
+    steps:
+      - name: Clone Repository
+        uses: actions/checkout@v4
+
+      - name: Build App
+        uses: # Something custom will happen here to build the app
+
+      - name: Endor Labs Scan
+        uses: endorlabs/github-action@v1
+        with:
+          namespace: 'my-namespace'
+          api_key: ${{ secrets.ENDOR_API_CREDENTIALS_KEY }}
+          api_secret: ${{ secrets.ENDOR_API_CREDENTIALS_SECRET }}
+          enable_github_action_token: false
+          scan_dependencies: true
+          scan_sast: ${{ inputs.inputs.sast_scan}}
+          pr: false
+          enable_pr_comments: false
+          tags: "actor=${{ github.actor }},run-id=${{ github.run_id }}${{ inputs.app_name && ',app=' }}${{ inputs.app_name }}"
+          scan_path: '.'
+          additional_args: >-
+            --include-path="apps/${{ inputs.app_name }}/**"
+            --exclude-path="packages/**"
+            --exclude-path="test/**"
+            --exclude-path=".github/**"
+            --exclude-path="eslint/**"
+            --exclude-path="scripts/**"
+            --exclude-path="cypress_e2e/**"
+            --languages=javascript${{ inputs.include_typescript && ',typescript' || '' }}
+            ${{ inputs.endor_args }}
+            --call-graph-languages=javascript${{ inputs.include_typescript && ',typescript' || '' }}
+            ${{ inputs.endor_default_branch && '--as-default-branch' || '' }}

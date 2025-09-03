@@ -1,0 +1,80 @@
+name: Endor Labs Security Scan
+on:
+  schedule:
+    - cron: '0 4 * * *'
+
+jobs:
+  get_projects:
+    runs-on: 'ubuntu-latest'
+    outputs:
+      pipenv_projects: ${{ steps.find_projects.outputs.pipenv_projects }}
+      uv_projects: ${{ steps.find_projects.outputs.uv_projects }}
+    steps:
+      - name: Clone Repository
+        uses: actions/checkout@v3
+
+      - name: Detect Python Projects with Lockfiles
+        id: find_projects
+        run: |
+          pipenv_json="["
+          uv_json="["
+
+          for dir in */; do
+            dir=${dir%/}
+            pyver="3.9"
+            if [ -f "$dir/Pipfile.lock" ]; then
+              pipenv_json+="{\"folder\":\"$dir\",\"python_package_manager\":\"pipenv\",\"python_version\":\"$pyver\"},"
+            elif [ -f "$dir/uv.lock" ]; then
+              uv_json+="{\"folder\":\"$dir\",\"python_package_manager\":\"uv\",\"python_version\":\"$pyver\"},"
+            fi
+          done
+
+          pipenv_json=$(echo "$pipenv_json" | sed 's/,$/]/')
+          uv_json=$(echo "$uv_json" | sed 's/,$/]/')
+          echo "Pipenv Projects:"
+          echo "$pipenv_json" | jq .
+          echo "UV Projects:"
+          echo "$uv_json" | jq .
+          echo "pipenv_projects=$(echo "$pipenv_json" | jq -r 'tostring')" >> $GITHUB_OUTPUT
+          echo "uv_projects=$(echo "$uv_json" | jq -r 'tostring')" >> $GITHUB_OUTPUT
+
+
+  scan_pipenv:
+    name: Scan App ${{ matrix.projects.folder }} (Pipenv)
+    needs: get_projects
+    strategy:
+      fail-fast: false
+      matrix:
+        projects: ${{ fromJson(needs.get_projects.outputs.pipenv_projects) }}
+    uses: ./.github/workflows/endorlabs-single-app-pipenv-scan.yml
+    with:
+      app_name: ${{ matrix.projects.folder }}
+      endor_args: --bypass-host-check --call-graph-languages=python
+      runner: "your-runner"
+      endor_default_branch: true
+      endor_log_level: debug
+      endor_log_verbose: true
+      python_version: ${{ matrix.projects.python_version }}
+    secrets:
+      ENDOR_API_CREDENTIALS_KEY: ${{ secrets.ENDOR_API_CREDENTIALS_KEY }}
+      ENDOR_API_CREDENTIALS_SECRET: ${{ secrets.ENDOR_API_CREDENTIALS_SECRET }}
+
+  scan_uv:
+    name: Scan UV App - ${{ matrix.projects.folder }}
+    needs: get_projects
+    strategy:
+      fail-fast: false
+      matrix:
+        projects: ${{ fromJson(needs.get_projects.outputs.uv_projects) }}
+    uses: ./.github/workflows/endorlabs-single-app-uv-scan.yml
+    with:
+      app_name: ${{ matrix.projects.folder }}
+      endor_args: --bypass-host-check --call-graph-languages=python
+      runner: "your-runner"
+      endor_default_branch: true
+      endor_log_level: debug
+      endor_log_verbose: true
+      python_version: ${{ matrix.projects.python_version }}
+    secrets:
+      ENDOR_API_CREDENTIALS_KEY: ${{ secrets.ENDOR_API_CREDENTIALS_KEY }}
+      ENDOR_API_CREDENTIALS_SECRET: ${{ secrets.ENDOR_API_CREDENTIALS_SECRET }}

@@ -1,0 +1,49 @@
+name: Endor Labs Security Scan
+on:
+  schedule:
+    - cron: '0 4 * * *' # This cron schedule runs the workflow every day at midnight ET (4 a.m. UTC)
+
+jobs:
+  get_js_projects:
+    runs-on: ubuntu-latest
+    outputs:
+      project_matrix: ${{ steps.find_projects.outputs.project_matrix }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+      # Assumes that all apps are inside an apps folder, and looks for a manifest file
+      - name: Discover JS Projects
+        id: find_projects
+        run: |
+          echo "Searching for JS projects under apps/..."
+          matrix_json="["
+          for dir in apps/*; do
+            if [ -f "$dir/package.json" ]; then
+              dir_name=$(basename "$dir")
+              matrix_json+="{\"folder\":\"$dir_name\"},"
+            fi
+          done
+          matrix_json=$(echo "$matrix_json" | sed 's/,$/]/')
+
+          echo "Detected JS Projects:"
+          echo "$matrix_json" | jq .
+
+          echo "project_matrix=$(echo "$matrix_json" | jq -r 'tostring')" >> $GITHUB_OUTPUT
+
+  scan_js_projects:
+    name: Scan ${{ matrix.projects.folder }}
+    needs: [get_js_projects]
+    strategy:
+      fail-fast: false
+      matrix:
+        projects: ${{ fromJson(needs.get_js_projects.outputs.project_matrix) }}
+    # References another sibling local workflow for the actual scan
+    uses: ./.github/workflows/endorlabs-single-app-scan.yml
+    with:
+      app_name: ${{ matrix.projects.folder }}
+      runner: instance-runner-name
+      include_typescript: true
+    secrets:
+      ENDOR_API_CREDENTIALS_KEY: ${{ secrets.ENDOR_API_CREDENTIALS_KEY }}
+      ENDOR_API_CREDENTIALS_SECRET: ${{ secrets.ENDOR_API_CREDENTIALS_SECRET }}
+      NPM_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}

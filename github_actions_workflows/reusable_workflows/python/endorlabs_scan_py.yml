@@ -1,0 +1,126 @@
+name: Scan Python - Endorlabs
+
+on:
+  workflow_call:
+    inputs:
+      runner:
+        description: Runner used to execute the job. It must have access to the build dependencies
+        type: string
+        required: true
+      scan_path:
+        description: Directory containing the service's root project
+        type: string
+        default: .
+      endor_args:
+        type: string
+        default: --bypass-host-check
+      endor_default_branch:
+        type: boolean
+        default: true
+      include_project:
+        description: Project that is going to be scanned
+        type: string
+        default: ''
+      pr_scan:
+        description: Whether or not to mark this scan as a PR run
+        type: boolean
+        default: false
+      endor_log_level:
+        description: Log level to use for the scan. Valid values are info, debug
+        type: string
+        default: info
+      endor_log_verbose:
+        description: Whether or not to enable verbose logging
+        type: boolean
+        default: false
+      python_version:
+        description: Python version used by the project
+        type: string
+        required: true
+      python_dependency_manager:
+        description: Tool used by the project for managing python libraries
+        type: string
+        default: poetry
+      requirements_file:
+        type: string
+        default: ''
+      custom_setup:
+        type: string
+        default: ''
+      custom_builder:
+        description: custom script for building applications
+        type: string
+        default: ''
+      sast_scan:
+        description: Whether or not perform a sast scan
+        type: boolean
+        default: true
+    secrets:
+      ENDOR_API_CREDENTIALS_KEY:
+        description: API key for Endorlabs
+        required: true
+      ENDOR_API_CREDENTIALS_SECRET:
+        description: API key secret for Endorlabs
+        required: true
+jobs:
+  endorlabs_cli_scan:
+    env:
+      ENDOR_OSS_API: https://api.oss.endorlabs.com
+      ENDOR_SCAN_SEMGREP_PROGRAM: ${{ inputs.sast_scan && 'opengrep' || '' }}
+    runs-on: ${{inputs.runner}}
+    steps:
+      - name: Clone Repository
+        uses: actions/checkout@v4
+      - name: Set up Python ${{ inputs.python_version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ inputs.python_version }}
+      - name: Process requirements file
+        if: ${{ inputs.requirements_file != '' && inputs.requirements_file != 'requirements.txt'}}
+        run: |
+          rsync -a ${{inputs.requirements_file}} requirements.txt
+      - name: Custom setup steps
+        if: ${{ inputs.custom_setup != ''}}
+        run: ${{inputs.custom_setup}}
+      - name: Project setup
+        if: ${{ inputs.custom_builder == '' }}
+        run: |
+          python3 -m venv venv
+          source venv/bin/activate
+          python3 -m pip install --upgrade pip
+      - name: Custom Build
+        if: ${{ inputs.custom_builder != '' }}
+        run: ${{ inputs.custom_builder }}
+      - name: Standard build
+        if: ${{ inputs.custom_builder == '' }}
+        run: |
+          if [ ${{inputs.python_dependency_manager}} = 'poetry' ]; then
+            pip install poetry
+            python3 -m ${{ inputs.python_dependency_manager}} install
+          elif [ ${{inputs.python_dependency_manager}} = 'pip' ]; then
+            if [ ${{inputs.requirements_file}} != '' ]; then
+              pip install -r requirements.txt
+            else
+              pip install .
+            fi
+          else
+            echo "[ERROR] Unknown dependency manager: ${{inputs.python_dependency_manager}}"
+            exit 1
+          fi
+        working-directory: ${{inputs.include_project}}
+      - name: Endor Labs Scan
+        uses: endorlabs/github-action@v1
+        with:
+          namespace: 'my-namespace'
+          api_key: ${{ secrets.ENDOR_API_CREDENTIALS_KEY }}
+          api_secret: ${{ secrets.ENDOR_API_CREDENTIALS_SECRET }}
+          enable_github_action_token: false
+          scan_dependencies: true
+          scan_sast: ${{ inputs.inputs.sast_scan}}
+          log_level: ${{ inputs.endor_log_level}}
+          log_verbose: ${{ inputs.endor_log_verbose}}
+          pr: ${{ inputs.pr_scan}}
+          enable_pr_comments: ${{ inputs.pr_scan}}
+          tags: "actor=${{ github.actor }},run-id=${{ github.run_id }}"
+          scan_path: ${{ inputs.scan_path }}
+          additional_args: --languages=python ${{ inputs.include_project !='' && '--include-path' || '' }} ${{ inputs.include_project }} ${{inputs.endor_args}} ${{ inputs.endor_default_branch && '--as-default-branch' || '' }}  --enable-remediation-action
