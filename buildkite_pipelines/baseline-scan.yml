@@ -12,7 +12,7 @@
 #   --secrets          # Enable secrets scanning
 #   --git-logs         # Scan git logs for committed secrets
 #   --github-actions   # Scan GitHub Actions workflows for vulnerabilities
-#   --tools            # Scan identified tools
+#   --sast             # Enable Static Application Security Testing
 
 steps:
   - label: ":shield: Endor Labs Baseline Scan"
@@ -60,12 +60,12 @@ steps:
         --api-key="${ENDOR_API_KEY}" \
         --api-secret="${ENDOR_API_SECRET}" \
         --dependencies \
+        --sast \
         --as-default-branch
         # Uncomment additional scan options as needed:
         # --secrets
         # --git-logs
         # --github-actions
-        # --tools
     plugins:
       - docker#v5.3.0:
           image: "ubuntu:22.04"
