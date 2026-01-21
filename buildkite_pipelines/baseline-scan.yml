@@ -1,0 +1,76 @@
+# Buildkite Pipeline for Endor Labs Baseline Scan
+# This pipeline performs a baseline security scan on the default branch
+#
+# Setup Instructions:
+# 1. Configure the following secrets in Buildkite:
+#    - API_KEY: Your Endor Labs API key
+#    - API_SECRET: Your Endor Labs API secret
+# 2. Update ENDOR_NAMESPACE with your Endor Labs tenant namespace
+# 3. Adjust the Docker image and build commands for your project type
+#
+# Optional: Uncomment additional scan options in the scan command:
+#   --secrets          # Enable secrets scanning
+#   --git-logs         # Scan git logs for committed secrets
+#   --github-actions   # Scan GitHub Actions workflows for vulnerabilities
+#   --sast             # Enable Static Application Security Testing
+
+steps:
+  - label: ":shield: Endor Labs Baseline Scan"
+    command: |
+      set -e
+      
+      # Install system dependencies and language runtimes
+      apt-get update && apt-get install -y \
+        curl \
+        ca-certificates \
+        coreutils \
+        python3.11 \
+        python3-pip \
+        openjdk-17-jdk \
+        maven \
+        gnupg
+      
+      # Install Node.js 22
+      curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
+      apt-get install -y nodejs
+      
+      # Install Go 1.22.4
+      GO_VERSION="1.22.4"
+      curl -L "https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz" -o /tmp/go.tar.gz
+      tar -C /usr/local -xzf /tmp/go.tar.gz
+      export PATH=$PATH:/usr/local/go/bin
+      # Create symlink so go is accessible from standard PATH
+      ln -sf /usr/local/go/bin/go /usr/local/bin/go
+      ln -sf /usr/local/go/bin/gofmt /usr/local/bin/gofmt
+      
+      # Set up Java environment
+      export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+      export PATH=$JAVA_HOME/bin:$PATH
+      
+      # Install endorctl
+      echo "Installing endorctl..."
+      curl -L https://api.endorlabs.com/download/latest/endorctl_linux_amd64 -o endorctl
+      echo "$(curl -s https://api.endorlabs.com/sha/latest/endorctl_linux_amd64)  endorctl" | sha256sum -c
+      chmod +x ./endorctl
+      ./endorctl --version
+      
+      # Run baseline scan
+      ./endorctl scan \
+        -n "${ENDOR_NAMESPACE}" \
+        --api-key="${ENDOR_API_KEY}" \
+        --api-secret="${ENDOR_API_SECRET}" \
+        --dependencies \
+        --sast \
+        --as-default-branch
+        # Uncomment additional scan options as needed:
+        # --secrets
+        # --git-logs
+        # --github-actions
+    plugins:
+      - docker#v5.3.0:
+          image: "ubuntu:22.04"
+    env:
+      ENDOR_NAMESPACE: "your-namespace"  # Replace with your Endor Labs namespace
+    secrets:
+      ENDOR_API_KEY: API_KEY
+      ENDOR_API_SECRET: API_SECRET
