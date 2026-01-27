@@ -22,14 +22,14 @@ jobs:
     - name: Set up Java
       uses: actions/setup-java@v4
       with:
-        java-version: '17'
+        java-version: '21'
         distribution: 'microsoft'
 
     - name: Install Gradle
       run: sudo apt-get update && sudo apt-get install -y gradle
 
     - name: Endor Scan
-      uses: endorlabs/github-action@main
+      uses: endorlabs/github-action@v1.1.4
       with:
         namespace: 'arsalan-learn'
         scan_dependencies: true

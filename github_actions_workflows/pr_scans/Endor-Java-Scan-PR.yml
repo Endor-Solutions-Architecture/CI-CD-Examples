@@ -13,19 +13,19 @@ jobs:
     steps:
 
         - name: Checkout Repository
-          uses: actions/checkout@v3
+          uses: actions/checkout@v4
           
         - name: Setup Java
           uses: actions/setup-java@v4
           with:
             distribution: microsoft
-            java-version: "17"
+            java-version: "21"
 
         - name: Compile Package
           run: mvn clean install
             
         - name: Endor Labs SCA Scan
-          uses: endorlabs/github-action@main
+          uses: endorlabs/github-action@v1.1.4
           with:
             namespace: "matt-demo"
             api: "https://api.endorlabs.com"

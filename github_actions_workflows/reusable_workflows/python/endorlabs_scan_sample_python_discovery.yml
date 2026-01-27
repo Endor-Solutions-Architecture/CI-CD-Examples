@@ -11,7 +11,7 @@ jobs:
       uv_projects: ${{ steps.find_projects.outputs.uv_projects }}
     steps:
       - name: Clone Repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Detect Python Projects with Lockfiles
         id: find_projects

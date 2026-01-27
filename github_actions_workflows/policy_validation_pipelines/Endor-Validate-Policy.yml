@@ -20,7 +20,7 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Endor Scan
-      uses: endorlabs/github-action@main
+      uses: endorlabs/github-action@v1.1.4
       with:
         namespace: ${{ secrets.ENDOR_NAMESPACE }}
         scan_dependencies: true
