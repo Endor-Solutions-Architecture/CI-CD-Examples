@@ -26,7 +26,7 @@ steps:
         coreutils \
         python3.11 \
         python3-pip \
-        openjdk-17-jdk \
+        openjdk-21-jdk \
         maven \
         gnupg
       
@@ -44,7 +44,7 @@ steps:
       ln -sf /usr/local/go/bin/gofmt /usr/local/bin/gofmt
       
       # Set up Java environment
-      export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+      export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64
       export PATH=$JAVA_HOME/bin:$PATH
       
       # Install endorctl

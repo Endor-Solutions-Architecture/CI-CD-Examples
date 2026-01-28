@@ -12,12 +12,12 @@ steps:
         echo "Checking out branch: ${BRANCH_NAME}"
         git checkout ${BRANCH_NAME}
   # Step 2: Build With Maven
-  - name: 'maven:3.8.6-openjdk-11'
+  - name: 'maven:3.9-eclipse-temurin-21'
     entrypoint: 'mvn'
     args: ['clean', 'install']
     id: 'Build'
   # Step 3: Install latest version of endorctl
-  - name: 'maven:3.8.6-openjdk-11'
+  - name: 'maven:3.9-eclipse-temurin-21'
     entrypoint: 'bash'
     args:
       - '-c'
@@ -28,7 +28,7 @@ steps:
         ./endorctl --version
     id: 'Install latest version of endorctl'
   # Step 4: SCA Scan With EndorLabs
-  - name: 'maven:3.8.6-openjdk-11'
+  - name: 'maven:3.9-eclipse-temurin-21'
     entrypoint: 'bash'
     args: ["-c", "./endorctl scan -n $$ENDOR_NAMESPACE --api-key=$$ENDOR_API_CREDENTIALS_KEY --api-secret=$$ENDOR_API_CREDENTIALS_SECRET --as-default-branch=true"]
     secretEnv: ['ENDOR_API_CREDENTIALS_KEY', 'ENDOR_API_CREDENTIALS_SECRET']
