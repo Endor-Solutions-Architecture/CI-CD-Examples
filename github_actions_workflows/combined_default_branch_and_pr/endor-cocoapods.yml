@@ -17,19 +17,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout Repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
     - name: Setup Ruby
-      uses: ruby/setup-ruby@v1
+      uses: ruby/setup-ruby@1a0ff446f5856bdfec298b61a09727c860d9d480 # v1.240.0
       with:
         ruby-version: "3.3.5"
     - name: Setup CocoaPods
-      uses: maxim-lobanov/setup-cocoapods@v1
+      uses: maxim-lobanov/setup-cocoapods@8e97e1e98e6ccf42564fdf5622c8feec74199377 # v1.4.0
       with:
         podfile-path: Podfile.lock
     - name: Build Package
       run: pod install
     - name: Endor Labs Scan Pull Request
-      uses: endorlabs/github-action@v1.1.4
+      uses: endorlabs/github-action@802fa65ba7c140405ee52d1c806cfdb647f8f743 # v1.1.4
       with:
         namespace: 'example' # Replace with your Endor Labs tenant namespace
         scan_dependencies: true
@@ -50,19 +50,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout Repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
     - name: Setup Ruby
-      uses: ruby/setup-ruby@v1
+      uses: ruby/setup-ruby@1a0ff446f5856bdfec298b61a09727c860d9d480 # v1.240.0
       with:
         ruby-version: "3.3.5"
     - name: Setup CocoaPods
-      uses: maxim-lobanov/setup-cocoapods@v1
+      uses: maxim-lobanov/setup-cocoapods@8e97e1e98e6ccf42564fdf5622c8feec74199377 # v1.4.0
       with:
         podfile-path: Podfile.lock
     - name: Build Package
       run: pod install
     - name: 'Endor Labs Scan Push to main'
-      uses: endorlabs/github-action@v1.1.4
+      uses: endorlabs/github-action@802fa65ba7c140405ee52d1c806cfdb647f8f743 # v1.1.4
       with:
         namespace: 'example' # Replace with your Endor Labs tenant namespace
         scan_dependencies: true
@@ -71,6 +71,6 @@ jobs:
         pr: false
         sarif_file: 'findings.sarif'
     - name: Upload findings to github
-      uses: github/codeql-action/upload-sarif@v3
+      uses: github/codeql-action/upload-sarif@48ab28a6f5dbc2a99bf1e0131198dd8f1df78169 # v3.28.0
       with:
         sarif_file: 'findings.sarif'

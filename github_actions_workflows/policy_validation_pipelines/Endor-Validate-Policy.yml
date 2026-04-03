@@ -17,10 +17,10 @@ jobs:
     
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
     - name: Endor Scan
-      uses: endorlabs/github-action@v1.1.4
+      uses: endorlabs/github-action@802fa65ba7c140405ee52d1c806cfdb647f8f743 # v1.1.4
       with:
         namespace: ${{ secrets.ENDOR_NAMESPACE }}
         scan_dependencies: true

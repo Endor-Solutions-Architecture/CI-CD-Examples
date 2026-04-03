@@ -17,10 +17,10 @@ jobs:
     
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
     - name: Set up Java
-      uses: actions/setup-java@v4
+      uses: actions/setup-java@c1e323688fd81a25caa38c78aa6df2d33d3e20d9 # v4.8.0
       with:
         java-version: '21'
         distribution: 'microsoft'
@@ -29,7 +29,7 @@ jobs:
       run: sudo apt-get update && sudo apt-get install -y gradle
 
     - name: Endor Scan
-      uses: endorlabs/github-action@v1.1.4
+      uses: endorlabs/github-action@802fa65ba7c140405ee52d1c806cfdb647f8f743 # v1.1.4
       with:
         namespace: 'arsalan-learn'
         scan_dependencies: true
