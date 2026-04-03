@@ -10,7 +10,7 @@ jobs:
       project_matrix: ${{ steps.find_projects.outputs.project_matrix }}
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
       # Assumes that all apps are inside an apps folder, and looks for a manifest file
       - name: Discover JS Projects
         id: find_projects
